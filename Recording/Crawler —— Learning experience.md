@@ -1243,3 +1243,221 @@ with open(r'./黑马网址-组合.txt', 'w', encoding='utf-8') as file:
 
 ```
 
+## Python 连接MySQL数据库
+
+python 中可以使用 `pymysql` 第三方库来连接 MySQL。
+
+### 安装 pymysql：
+
+```powershell
+pip3 install pymysql
+```
+
+### 简单的使用方法：
+
+```python
+import pymysql
+
+# 连接到MySQL数据库
+connection = pymysql.connect(
+    host='localhost',        # 数据库主机地址
+    user='yourusername',     # 数据库用户名
+    password='yourpassword', # 数据库密码
+    database='yourdatabase'  # 数据库名称
+)
+
+try:
+    # 创建一个游标对象
+    with connection.cursor() as cursor:
+        # 执行SQL查询
+        sql = "SELECT * FROM your_table"
+        cursor.execute(sql)
+        
+        # 获取查询结果
+        result = cursor.fetchall()
+        
+        # 打印结果
+        for row in result:
+            print(row)
+
+finally:
+    # 关闭数据库连接
+    connection.close()
+```
+
+### 使用方法详解
+
+#### 0. 基本方法详解
+
+`connection.cursor()`：用于创建一个游标对象，以便执行SQL语句和管理结果集。
+
+**游标的参数**：
+
+```python
+cursor = connection.cursor(pymysql.cursors.Cursor)      # 默认，返回元组结果。
+cursor = connection.cursor(pymysql.cursors.DictCursor)  # 返回字典结果，键为列名。
+```
+
+- `cursor.execute()`：用于执行SQL语句。
+
+- **`fetchone()`**: 获取结果集的下一行。
+- **`fetchall()`**: 获取结果集的所有行。
+- **`fetchmany(size=None)`**: 获取结果集的多行，参数为行数。
+- **`close()`**: 关闭游标。
+
+`connection.commit()`：用于提交数据。
+
+#### 1. 连接到数据库
+
+使用 `pymysql.connect()` 来连接到数据库。
+
+```python
+connection = pymysql.connect(host='hostname',
+                             user='username',
+                             password='password',
+                             database='databasename',
+                             charset='utf8mb4',
+                             cursorclass=pymysql.cursors.DictCursor)
+```
+
+#### 2. 查询数据
+
+```python
+try:
+    with connection.cursor() as cursor:
+        sql = "SELECT * FROM your_table"
+        cursor.execute(sql)
+        result = cursor.fetchall()
+        for row in result:
+            print(row)
+finally:
+    connection.close()
+```
+
+#### 3. 插入数据
+
+##### 插入一行数据：
+
+```python
+try:
+    with connection.cursor() as cursor:
+        sql = "INSERT INTO your_table (column1, column2) VALUES (%s, %s)"
+        cursor.execute(sql, ('value1', 'value2'))
+    connection.commit()
+finally:
+    connection.close()
+```
+
+##### 插入多行数据
+
+- `cursor.executemany(SQL, DATA: list)` 来提交插入多行数据，第一个参数是SQL语句，第二个参数是一个列表，列表中每一个元素为一个元组类型的数据，每一个元组类型的数据表示向表中插入一条数据。
+
+```python
+try:
+    with connection.cursor() as cursor:
+        # 插入多行数据的SQL语句
+        insert_multiple_sql = """
+        INSERT INTO users (username, email) VALUES (%s, %s)
+        """
+        # 要插入的数据
+        data = [
+            ('user1', 'user1@example.com'),
+            ('user2', 'user2@example.com'),
+            ('user3', 'user3@example.com')
+        ]
+
+        # 执行插入操作，使用 executemany
+        cursor.executemany(insert_multiple_sql, data)
+
+    # 提交事务
+    connection.commit()
+    print("多行数据插入成功！")
+
+except pymysql.MySQLError as e:
+    print(f"插入数据时发生错误：{e}")
+    connection.rollback()  # 出错回滚事务
+
+finally:
+    connection.close()  # 关闭连接
+```
+
+#### 4. 更新数据
+
+```python
+try:
+    with connection.cursor() as cursor:
+        sql = "UPDATE your_table SET column1 = %s WHERE column2 = %s"
+        cursor.execute(sql, ('new_value1', 'value2'))
+    connection.commit()
+finally:
+    connection.close()
+```
+
+#### 5. 删除数据
+
+```python
+try:
+    with connection.cursor() as cursor:
+        sql = "DELETE FROM your_table WHERE column2 = %s"
+        cursor.execute(sql, ('value2',))
+    connection.commit()
+finally:
+    connection.close()
+```
+
+#### 6. 创建一个表
+
+```python
+try:
+    with connection.cursor() as cursor:
+        # 创建表的SQL语句
+        create_table_sql = """
+        CREATE TABLE users (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            username VARCHAR(50) NOT NULL,
+            email VARCHAR(100) NOT NULL UNIQUE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+        """
+        # 执行SQL语句
+        cursor.execute(create_table_sql)
+    
+    # 提交事务
+    connection.commit()
+    print("表创建成功！")
+
+except pymysql.MySQLError as e:
+    print(f"创建表时发生错误：{e}")
+    connection.rollback()  # 回滚事务以保持数据一致性
+
+finally:
+    connection.close()  # 关闭连接
+```
+
+#### 7. 处理异常
+
+```python
+import pymysql
+
+try:
+    connection = pymysql.connect(
+        host='localhost',
+        user='yourusername',
+        password='yourpassword',
+        database='yourdatabase'
+    )
+    with connection.cursor() as cursor:
+        sql = "SELECT * FROM your_table"
+        cursor.execute(sql)
+        result = cursor.fetchall()
+        for row in result:
+            print(row)
+
+except pymysql.MySQLError as e:
+    print(f"Error: {e}")
+
+finally:
+    if connection.open:  # 如果连接保持开启
+        connection.close()
+```
+
